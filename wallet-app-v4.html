@@ -707,8 +707,13 @@ function loadState() {
 
 let state = loadState();
 
+let autoSyncTimer = null;
 function saveState() {
   localStorage.setItem('mywallet_v2', JSON.stringify(state));
+  if(gdriveToken){
+    clearTimeout(autoSyncTimer);
+    autoSyncTimer = setTimeout(()=>{ gdriveUpload(true); }, 3000);
+  }
 }
 
 function getActiveWallet() {
@@ -1653,9 +1658,9 @@ function updateGdriveUI(connected){
   }
 }
 
-async function gdriveUpload(){
-  if(!gdriveToken){ showToast('⚠️ سجّل دخول أولاً'); return; }
-  showToast('☁️ جاري الرفع...');
+async function gdriveUpload(silent=false){
+  if(!gdriveToken){ if(!silent) showToast('⚠️ سجّل دخول أولاً'); return; }
+  if(!silent) showToast('☁️ جاري الرفع...');
   try {
     // Find existing file
     const fileId = await gdriveFindFile();
@@ -1682,7 +1687,7 @@ async function gdriveUpload(){
     localStorage.setItem('gdrive_last_sync', now);
     document.getElementById('gdriveLastSync').style.display = 'block';
     document.getElementById('gdriveLastSync').textContent = 'آخر مزامنة: ' + new Date(now).toLocaleString('ar-EG');
-    showToast('✅ تم رفع البيانات على Drive بنجاح!');
+    if(!silent) showToast('✅ تم رفع البيانات على Drive بنجاح!'); else showToast('☁️ تم الحفظ التلقائي على Drive');
   } catch(e){
     console.error(e);
     if(e.message && e.message.includes('401')){
